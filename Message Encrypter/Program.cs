@@ -15,7 +15,7 @@ string[] _title = new string[]
     "██─▄█▀██─█▄▀─██─███▀██─▄─▄██▄─▄███─▄▄▄███─████─▄█▀██─▄─▄█",
     "▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▄▄▄▄▄▀▄▄▀▄▄▀▀▄▄▄▀▀▄▄▄▀▀▀▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀"
 };
-const string IV_SEPARATOR = @"\_-_\";
+const string SEPARATOR = @" ";
 
 Console.Clear();
 
@@ -38,15 +38,14 @@ await t;
 void Decrypt()
 {
     using var crypt = Aes.Create();
-    byte[] key = GetKey();
-    crypt.KeySize = key.Length * 8;
-    crypt.Key = key;
 
-    string[] input = ClipboardService.GetText()?.Split(IV_SEPARATOR) ?? Array.Empty<string>();
+    string[] input = ClipboardService.GetText()?.Split(SEPARATOR) ?? Array.Empty<string>();
+    byte[] key = input[0].ToBytes();
     byte[] IV = input[^1].ToBytes();
-    byte[] value = string.Join(string.Empty, input[..^1]).ToBytes();
+    byte[] value = string.Join(string.Empty, input[1..^1]).ToBytes();
     
     crypt.IV = IV;
+    crypt.Key = key;
     var decryptedValue = crypt.DecryptCbc(value, IV, PaddingMode.Zeros);
     string decryptedValueInText = decryptedValue.ToUnicodeString();
 
@@ -58,14 +57,11 @@ void Decrypt()
 void Encrypt()
 {
     using var crypt = Aes.Create();
-    byte[] key = GetKey();
-    crypt.KeySize = key.Length * 8;
-    crypt.Key = key;
-    crypt.GenerateIV();
+    crypt.GenerateKey();
 
     string value = ClipboardService.GetText() ?? string.Empty;
     var encryptedValue = crypt.EncryptCbc(value.ToBytes(), crypt.IV, PaddingMode.Zeros);
-    string encryptedValueInText = $"{encryptedValue.ToUnicodeString()}{IV_SEPARATOR}{crypt.IV.ToUnicodeString()}";
+    string encryptedValueInText = $"{crypt.Key.ToUnicodeString()}{SEPARATOR}{encryptedValue.ToUnicodeString()}{SEPARATOR}{crypt.IV.ToUnicodeString()}";
 
     ClipboardService.SetText(encryptedValueInText);
     LogInfoMessage($"{encryptedValueInText}: {encryptedValue.Length}");
