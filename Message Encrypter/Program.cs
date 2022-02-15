@@ -16,6 +16,8 @@ string[] _title = new string[]
 };
 byte[] IV = new byte[] { 232, 164, 157, 217, 142, 215, 223, 69 };
 
+Console.Clear();
+
 ShowTitle(_title);
 ShowVersion(System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
