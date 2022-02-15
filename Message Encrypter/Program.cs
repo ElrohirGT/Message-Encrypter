@@ -4,8 +4,6 @@ using BlowFishCS;
 
 using ConsoleUtilitiesLite;
 
-using Message_Encrypter;
-
 using TextCopy;
 
 using static ConsoleUtilitiesLite.ConsoleUtilities;
@@ -16,24 +14,27 @@ string[] _title = new string[]
     "██─▄█▀██─█▄▀─██─███▀██─▄─▄██▄─▄███─▄▄▄███─████─▄█▀██─▄─▄█",
     "▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▄▄▄▄▄▀▄▄▀▄▄▀▀▄▄▄▀▀▄▄▄▀▀▀▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀"
 };
-byte[] IV = new byte[] { 232, 164, 157, 217, 142, 215, 223, 69 };
+byte[] IV = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 Console.Clear();
 
 ShowTitle(_title);
 ShowVersion(System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
+bool shouldStop = false;
 CommandObserver observer = new();
 observer.Add(new ConsoleCommand(ConsoleKey.D, Decrypt, "decrypt message"));
 observer.Add(new ConsoleCommand(ConsoleKey.E, Encrypt, "encrypt message"));
 observer.Add(new ConsoleCommand(ConsoleKey.C, ChangeKey, "change key"));
+observer.Add(new ConsoleCommand(ConsoleKey.Q, ()=>shouldStop = true, "quit"));
 
 var t = observer.StartObserving();
 foreach (var command in observer.Commands)
     LogInfoMessage($"Press {command.ActivatorKey} to {command.Description}.");
 SubDivision();
-Console.WriteLine("Press enter to quit.");
-Console.ReadLine();
+
+while (!shouldStop)
+    await Task.Delay(1000);
 
 void Decrypt()
 {
