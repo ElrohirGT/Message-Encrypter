@@ -2,6 +2,8 @@
 
 using BlowFishCS;
 
+using ConsoleUtilitiesLite;
+
 using Message_Encrypter;
 
 using TextCopy;
@@ -21,27 +23,21 @@ Console.Clear();
 ShowTitle(_title);
 ShowVersion(System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
-Console.WriteLine("1) Decrypt.");
-Console.WriteLine("2) Encrypt.");
+CommandObserver observer = new();
+observer.Add(new ConsoleCommand(ConsoleKey.D, Decrypt, "decrypt message"));
+observer.Add(new ConsoleCommand(ConsoleKey.E, Encrypt, "encrypt message"));
+observer.Add(new ConsoleCommand(ConsoleKey.C, ChangeKey, "change key"));
 
-ConsoleMenu mainMenu = new();
-mainMenu.AddCommand("1", Decrypt);
-mainMenu.AddCommand("2", Encrypt);
-
-while (true)
-{
-    string answer = Console.ReadLine() ?? string.Empty;
-    if (answer == "q")
-        break;
-    await mainMenu.Execute(answer);
-    SubDivision();
-}
+var t = observer.StartObserving();
+foreach (var command in observer.Commands)
+    LogInfoMessage($"Press {command.ActivatorKey} to {command.Description}.");
+SubDivision();
+Console.WriteLine("Press enter to quit.");
+Console.ReadLine();
 
 void Decrypt()
 {
-    Console.WriteLine("Write the private key (write nothing to use the saved one).");
-    string? inputKey = Console.ReadLine();
-    byte[] key = GetKey(inputKey);
+    byte[] key = GetKey();
 
     BlowFish crypt = new(key);
     crypt.IV = IV;
@@ -56,9 +52,7 @@ void Decrypt()
 
 void Encrypt()
 {
-    Console.WriteLine("Write the public key (write nothing to use the saved one).");
-    string? inputKey = Console.ReadLine();
-    byte[] key = GetKey(inputKey);
+    byte[] key = GetKey();
 
     BlowFish crypt = new(key);
     crypt.IV = IV;
@@ -70,20 +64,12 @@ void Encrypt()
     ClipboardService.SetText(encryptedValueInText);
     LogInfoMessage(encryptedValueInText);
 }
-
-byte[] GetKey(string? inputKey)
+void ChangeKey()
 {
-    byte[] key;
-    if (!string.IsNullOrEmpty(inputKey))
-    {
-        key = Encoding.UTF8.GetBytes(inputKey);
-        File.WriteAllBytes(".pKey", key);
-    }
-    else
-    {
-        if (!File.Exists(".pKey"))
-            File.Create(".pKey");
-        key = File.ReadAllBytes(".pKey");
-    }
-    return key;
+    Console.WriteLine("Write the private key (write nothing to use the saved one).");
+    string? inputKey = Console.ReadLine() ?? string.Empty;
+    byte[] key = Encoding.UTF8.GetBytes(inputKey);
+    File.WriteAllBytes(".pKey", key);
 }
+
+byte[] GetKey() => File.ReadAllBytes(".pKey");
