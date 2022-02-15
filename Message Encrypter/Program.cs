@@ -1,8 +1,9 @@
-﻿using System.Text;
-
-using BlowFishCS;
+﻿using System.Security.Cryptography;
+using System.Text;
 
 using ConsoleUtilitiesLite;
+
+using Message_Encrypter;
 
 using TextCopy;
 
@@ -14,56 +15,61 @@ string[] _title = new string[]
     "██─▄█▀██─█▄▀─██─███▀██─▄─▄██▄─▄███─▄▄▄███─████─▄█▀██─▄─▄█",
     "▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▄▄▄▄▄▀▄▄▀▄▄▀▀▄▄▄▀▀▄▄▄▀▀▀▀▄▄▄▀▀▄▄▄▄▄▀▄▄▀▄▄▀"
 };
-byte[] IV = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+const string IV_SEPARATOR = @"\_-_\";
 
 Console.Clear();
 
 ShowTitle(_title);
 ShowVersion(System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
-bool shouldStop = false;
 CommandObserver observer = new();
 observer.Add(new ConsoleCommand(ConsoleKey.D, Decrypt, "decrypt message"));
 observer.Add(new ConsoleCommand(ConsoleKey.E, Encrypt, "encrypt message"));
 observer.Add(new ConsoleCommand(ConsoleKey.C, ChangeKey, "change key"));
-observer.Add(new ConsoleCommand(ConsoleKey.Q, ()=>shouldStop = true, "quit"));
+observer.Add(new ConsoleCommand(ConsoleKey.Q, observer.StopObserving, "quit"));
 
 var t = observer.StartObserving();
 foreach (var command in observer.Commands)
     LogInfoMessage($"Press {command.ActivatorKey} to {command.Description}.");
 SubDivision();
 
-while (!shouldStop)
-    await Task.Delay(1000);
+await t;
 
 void Decrypt()
 {
+    using var crypt = Aes.Create();
     byte[] key = GetKey();
+    crypt.KeySize = key.Length * 8;
+    crypt.Key = key;
 
-    BlowFish crypt = new(key);
+    string[] input = ClipboardService.GetText()?.Split(IV_SEPARATOR) ?? Array.Empty<string>();
+    byte[] IV = input[^1].ToBytes();
+    byte[] value = string.Join(string.Empty, input[..^1]).ToBytes();
+    
     crypt.IV = IV;
-
-    string value = ClipboardService.GetText() ?? string.Empty;
-    var decryptedValue = crypt.Decrypt_CBC(Encoding.Unicode.GetBytes(value));
-    string decryptedValueInText = Encoding.Unicode.GetString(decryptedValue);
+    var decryptedValue = crypt.DecryptCbc(value, IV, PaddingMode.Zeros);
+    string decryptedValueInText = decryptedValue.ToUnicodeString();
 
     ClipboardService.SetText(decryptedValueInText);
-    LogInfoMessage(decryptedValueInText);
+    LogInfoMessage($"{decryptedValueInText}: {decryptedValue.Length}");
+    crypt.Clear();
 }
 
 void Encrypt()
 {
+    using var crypt = Aes.Create();
     byte[] key = GetKey();
-
-    BlowFish crypt = new(key);
-    crypt.IV = IV;
+    crypt.KeySize = key.Length * 8;
+    crypt.Key = key;
+    crypt.GenerateIV();
 
     string value = ClipboardService.GetText() ?? string.Empty;
-    var encryptedValue = crypt.Encrypt_CBC(Encoding.Unicode.GetBytes(value));
-    string encryptedValueInText = Encoding.Unicode.GetString(encryptedValue);
+    var encryptedValue = crypt.EncryptCbc(value.ToBytes(), crypt.IV, PaddingMode.Zeros);
+    string encryptedValueInText = $"{encryptedValue.ToUnicodeString()}{IV_SEPARATOR}{crypt.IV.ToUnicodeString()}";
 
     ClipboardService.SetText(encryptedValueInText);
-    LogInfoMessage(encryptedValueInText);
+    LogInfoMessage($"{encryptedValueInText}: {encryptedValue.Length}");
+    crypt.Clear();
 }
 void ChangeKey()
 {
