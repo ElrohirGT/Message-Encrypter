@@ -1,5 +1,4 @@
 ﻿using System.Security.Cryptography;
-using System.Text;
 
 using ConsoleUtilitiesLite;
 
@@ -25,7 +24,6 @@ ShowVersion(System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.
 CommandObserver observer = new();
 observer.Add(new ConsoleCommand(ConsoleKey.D, Decrypt, "decrypt message"));
 observer.Add(new ConsoleCommand(ConsoleKey.E, Encrypt, "encrypt message"));
-observer.Add(new ConsoleCommand(ConsoleKey.C, ChangeKey, "change key"));
 observer.Add(new ConsoleCommand(ConsoleKey.Q, observer.StopObserving, "quit"));
 
 var t = observer.StartObserving();
@@ -50,7 +48,7 @@ void Decrypt()
     string decryptedValueInText = decryptedValue.ToUnicodeString();
 
     ClipboardService.SetText(decryptedValueInText);
-    LogInfoMessage($"{decryptedValueInText}: {decryptedValue.Length}");
+    LogInfoMessage($"Message decrypted!");
     crypt.Clear();
 }
 
@@ -65,15 +63,6 @@ void Encrypt()
     string encryptedValueInText = $"{crypt.Key.ToBase64String()}{SEPARATOR}{crypt.IV.ToBase64String()}{SEPARATOR}{encryptedValue.ToBase64String()}";
 
     ClipboardService.SetText(encryptedValueInText);
-    LogInfoMessage($"{encryptedValueInText}: {encryptedValue.Length}");
+    LogInfoMessage($"Message encrypted!");
     crypt.Clear();
 }
-void ChangeKey()
-{
-    Console.WriteLine("Write the private key (write nothing to use the saved one).");
-    string? inputKey = Console.ReadLine() ?? string.Empty;
-    byte[] key = Encoding.UTF8.GetBytes(inputKey);
-    File.WriteAllBytes(".pKey", key);
-}
-
-byte[] GetKey() => File.ReadAllBytes(".pKey");
