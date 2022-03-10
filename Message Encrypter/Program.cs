@@ -37,6 +37,7 @@ void Decrypt()
     string message = ClipboardService.GetText() ?? string.Empty;
     IEncrypter encrypter = EncrypterFactory.GetFromEncryption(message);
     encrypter.Decrypt(message);
+    LogSuccessMessage("Decrypted!");
 }
 
 void Encrypt()
@@ -44,4 +45,5 @@ void Encrypt()
     string message = ClipboardService.GetText() ?? string.Empty;
     IEncrypter encrypter = EncrypterFactory.GetFromMessage(message);
     encrypter.Encrypt(message);
+    LogSuccessMessage("Encrypted!");
 }
