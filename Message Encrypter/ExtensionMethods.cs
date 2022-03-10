@@ -8,7 +8,15 @@ public static class ExtensionMethods
     {
         strEncoding ??= Encoding.Unicode;
         var bytes  = strEncoding.GetBytes(str);
-        return Convert.FromBase64String(bytes.ToBase64String());
+        return bytes;
     }
     public static string ToUnicodeString(this byte[] bytes) => Encoding.Unicode.GetString(bytes);
+
+    public static void ReadArray(this FileStream stream, ref byte[] array)
+    {
+        while (stream.Read(array, 0, array.Length) != array.Length)
+        {
+            //It doesn't need to do anything here as it already sets the values to array.
+        }
+    }
 }
