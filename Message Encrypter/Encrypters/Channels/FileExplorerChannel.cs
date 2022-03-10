@@ -25,7 +25,7 @@ public class FileExplorerChannel : IChannel
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             psi.FileName = "explorer";
-            psi.Arguments = filePath;
+            psi.Arguments = containerDirectory;
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
