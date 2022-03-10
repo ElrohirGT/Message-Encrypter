@@ -1,8 +1,7 @@
-﻿using System.Security.Cryptography;
-
+﻿
 using ConsoleUtilitiesLite;
 
-using Message_Encrypter;
+using Message_Encrypter.Encrypters;
 
 using TextCopy;
 
@@ -35,34 +34,14 @@ await t;
 
 void Decrypt()
 {
-    using var crypt = Aes.Create();
-
-    string[] input = ClipboardService.GetText()?.Split(SEPARATOR) ?? Array.Empty<string>();
-    byte[] key = Convert.FromBase64String(input[0]);
-    byte[] IV = Convert.FromBase64String(input[1]);
-    byte[] value = Convert.FromBase64String(string.Join(string.Empty, input[2..]));
-    
-    crypt.IV = IV;
-    crypt.Key = key;
-    var decryptedValue = crypt.DecryptCbc(value, IV, PaddingMode.Zeros);
-    string decryptedValueInText = decryptedValue.ToUnicodeString();
-
-    ClipboardService.SetText(decryptedValueInText);
-    LogInfoMessage($"Message decrypted!");
-    crypt.Clear();
+    string message = ClipboardService.GetText() ?? string.Empty;
+    IEncrypter encrypter = EncrypterFactory.GetFromEncryption(message);
+    encrypter.Decrypt(message);
 }
 
 void Encrypt()
 {
-    using var crypt = Aes.Create();
-    crypt.GenerateKey();
-    crypt.GenerateIV();
-
-    string value = ClipboardService.GetText() ?? string.Empty;
-    var encryptedValue = crypt.EncryptCbc(value.ToBytes(), crypt.IV, PaddingMode.Zeros);
-    string encryptedValueInText = $"{crypt.Key.ToBase64String()}{SEPARATOR}{crypt.IV.ToBase64String()}{SEPARATOR}{encryptedValue.ToBase64String()}";
-
-    ClipboardService.SetText(encryptedValueInText);
-    LogInfoMessage($"Message encrypted!");
-    crypt.Clear();
+    string message = ClipboardService.GetText() ?? string.Empty;
+    IEncrypter encrypter = EncrypterFactory.GetFromMessage(message);
+    encrypter.Encrypt(message);
 }
